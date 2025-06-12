@@ -29,6 +29,7 @@ class DatabaseManager:
         
         self.connection: Optional[PostgresConnection] = None
         self._setup_logging()
+        self.connect()  # Establish connection during initialization
     
     def _setup_logging(self):
         """Setup logging for database operations."""
@@ -306,7 +307,173 @@ class DatabaseManager:
             return False
         finally:
             self.disconnect()
-
+    
+    def combine_recording_segments(self, recording_name: Optional[str], combined_title: str) -> Optional[int]:
+        """
+        Combine all segments for a recording into a single entry in combined_recordings table.
+        
+        Args:
+            recording_name: Name of the recording to combine (None for unnamed recordings)
+            combined_title: Title for the combined recording
+            
+        Returns:
+            ID of the combined recording entry, or None if failed
+        """
+        if self.connection is None:
+            return None
+        
+        try:
+            with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Get all segments for this recording, ordered by timestamp
+                if recording_name is None:
+                    cursor.execute("""
+                        SELECT segment_text, segment_timestamp, 
+                               EXTRACT(EPOCH FROM segment_timestamp)::INTEGER as segment_seconds
+                        FROM recordings 
+                        WHERE recording_name IS NULL 
+                        ORDER BY segment_timestamp
+                    """)
+                else:
+                    cursor.execute("""
+                        SELECT segment_text, segment_timestamp,
+                               EXTRACT(EPOCH FROM segment_timestamp)::INTEGER as segment_seconds
+                        FROM recordings 
+                        WHERE recording_name = %s 
+                        ORDER BY segment_timestamp
+                    """, (recording_name,))
+                
+                segments = cursor.fetchall()
+                
+                if not segments:
+                    self.logger.warning(f"No segments found for recording: {recording_name}")
+                    return None
+                
+                # Combine all segment texts with newlines for better readability
+                full_transcription = "\n".join([segment['segment_text'] for segment in segments])
+                
+                # Calculate total duration (last timestamp)
+                max_timestamp = max(segments, key=lambda x: x['segment_seconds'])['segment_timestamp']
+                segment_count = len(segments)
+                
+                # Insert into combined_recordings table
+                cursor.execute("""
+                    INSERT INTO combined_recordings 
+                    (recording_name, full_transcription, total_duration, segment_count)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                """, (combined_title, full_transcription, max_timestamp, segment_count))
+                
+                result = cursor.fetchone()
+                self.connection.commit()
+                
+                combined_id = result['id'] if result else None
+                
+                if combined_id:
+                    self.logger.info(f"Successfully combined {segment_count} segments into recording ID {combined_id}")
+                
+                return combined_id
+                
+        except psycopg2.Error as e:
+            self.logger.error(f"Failed to combine recording segments: {e}")
+            if self.connection:
+                self.connection.rollback()
+            return None
+    
+    def delete_recording_segments(self, recording_name: Optional[str]) -> int:
+        """
+        Delete all segments for a specific recording.
+        
+        Args:
+            recording_name: Name of the recording to delete (None for no name)
+            
+        Returns:
+            Number of segments deleted, or -1 if failed
+        """
+        if self.connection is None:
+            return -1
+        
+        try:
+            with self.connection.cursor() as cursor:
+                # Delete all segments for this recording
+                if recording_name is None:
+                    cursor.execute("""
+                        DELETE FROM recordings 
+                        WHERE recording_name IS NULL
+                    """)
+                else:
+                    cursor.execute("""
+                        DELETE FROM recordings 
+                        WHERE recording_name = %s
+                    """, (recording_name,))
+                
+                deleted_count = cursor.rowcount
+                self.connection.commit()
+                
+                if deleted_count > 0:
+                    self.logger.info(f"Successfully deleted {deleted_count} segments for recording: {recording_name or '(No name)'}")
+                
+                return deleted_count
+                
+        except psycopg2.Error as e:
+            self.logger.error(f"Failed to delete recording segments: {e}")
+            if self.connection:
+                self.connection.rollback()
+            return -1
+    
+    def get_combined_recordings(self) -> List[Dict[str, Any]]:
+        """
+        Get all combined recordings.
+        
+        Returns:
+            List of combined recording dictionaries
+        """
+        if self.connection is None:
+            return []
+        
+        try:
+            with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id, recording_name, full_transcription, total_duration, 
+                           segment_count, created_at, updated_at
+                    FROM combined_recordings 
+                    ORDER BY created_at DESC
+                """)
+                
+                return [dict(record) for record in cursor.fetchall()]
+                
+        except psycopg2.Error as e:
+            self.logger.error(f"Failed to fetch combined recordings: {e}")
+            return []
+    
+    def get_combined_recording_by_name(self, recording_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a specific combined recording by name.
+        
+        Args:
+            recording_name: Name of the combined recording
+            
+        Returns:
+            Combined recording dictionary or None if not found
+        """
+        if self.connection is None:
+            return None
+        
+        try:
+            with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT id, recording_name, full_transcription, total_duration, 
+                           segment_count, created_at, updated_at
+                    FROM combined_recordings 
+                    WHERE recording_name = %s
+                """, (recording_name,))
+                
+                result = cursor.fetchone()
+                return dict(result) if result else None
+                
+        except psycopg2.Error as e:
+            self.logger.error(f"Failed to fetch combined recording: {e}")
+            return None
+        
 
 # Convenience functions for easy import
 def save_transcription_segment(recording_name: Optional[str], timestamp: float, text: str, category: Optional[str] = None) -> bool:
@@ -342,6 +509,22 @@ def get_recording_history(recording_name: Optional[str]) -> List[Dict]:
     segments = db.get_recordings_by_name(recording_name)
     db.disconnect()
     return segments
+
+
+def delete_recording_segments_by_name(recording_name: Optional[str]) -> int:
+    """
+    Convenience function to delete all segments for a recording.
+    
+    Args:
+        recording_name: Name of the recording to delete (None for no name)
+        
+    Returns:
+        Number of segments deleted, or -1 if failed
+    """
+    db = DatabaseManager()
+    deleted_count = db.delete_recording_segments(recording_name)
+    db.disconnect()
+    return deleted_count
 
 
 if __name__ == "__main__":

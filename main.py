@@ -183,7 +183,6 @@ def get_user_input():
     
     return device, recording_name
 
-
 def display_session_info(recording_name: Optional[str]):
     """Display session information and features."""
     if recording_name:

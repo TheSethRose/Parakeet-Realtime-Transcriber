@@ -31,60 +31,24 @@ A professional real-time audio transcription system using NVIDIA's Parakeet TDT 
 
 ## Quick Start
 
-### 1. Prerequisites
+For detailed setup instructions, see the [Setup Guide](docs/setup.md).
 
-#### Install Background Music (for system audio capture)
-```bash
-# Install Background Music for system audio capture
-brew install background-music
+### Basic Setup
+1. **Install Prerequisites** - Background Music app for system audio capture
+2. **Clone Project** - Download and navigate to the project directory
+3. **Run Setup** - `./setup.sh` to install dependencies
+4. **Configure Database** - Set up your Neon PostgreSQL connection
+5. **Run Transcriber** - `python main.py`
 
-# Start Background Music
-open /Applications/Background\ Music.app
-```
+## Documentation
 
-#### Fix Audio Echoing Issues (if needed)
-If you experience audio echoing or distortion:
-```bash
-# Kill and restart Core Audio daemon
-sudo killall coreaudiod
+All documentation is available in the `/docs` folder:
 
-# Restart Background Music
-open /Applications/Background\ Music.app
-```
-
-### 2. Setup Project
-```bash
-# Clone or download the project
-cd python-audio
-
-# Run setup script (installs uv and dependencies)
-chmod +x setup.sh
-./setup.sh
-```
-
-### 3. Database Setup
-
-The project uses Neon PostgreSQL for cloud database storage. Make sure your `.env` file contains the correct Neon connection string:
-
-```bash
-# Example .env configuration
-DATABASE_URL=postgresql://username:password@hostname/database_name?sslmode=require
-```
-
-Test your database connection:
-```bash
-python test_neon_connection.py
-```
-
-### 4. Activate Environment
-```bash
-source .venv/bin/activate
-```
-
-### 5. Run Transcriber
-```bash
-python main.py
-```
+- **[Setup Guide](docs/setup.md)** - Complete installation and configuration instructions
+- **[Usage Guide](docs/usage.md)** - How to use the transcriber for different scenarios
+- **[API Documentation](docs/api.md)** - Integration and programmatic usage
+- **[Database Setup](docs/DATABASE_SETUP.md)** - Database configuration and schema details
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 
 ## Requirements
 
@@ -94,64 +58,7 @@ python main.py
 - **Background Music** (for system audio capture)
 - **Audio input device** (microphone or system audio)
 
-## Configuration Options
-
-### VAD Sensitivity
-Adjust the Voice Activity Detection sensitivity (0-3):
-```python
-transcriber = AudioTranscriber(vad_aggressiveness=2)  # Default: 2
-```
-
-- `0`: Least aggressive (detects more background noise as speech)
-- `1`: Low aggressiveness 
-- `2`: **Default** - Good balance
-- `3`: Most aggressive (only clear speech detected)
-
-### Segment Duration
-Adjust audio segment length for processing:
-```python
-transcriber = AudioTranscriber(
-    max_segment_duration=20,  # Max seconds per segment
-    min_segment_duration=5    # Min seconds per segment
-)
-```
-
-### Pause Detection
-Adjust pause detection timing:
-```python
-transcriber = AudioTranscriber(
-    pause_threshold=0.8,      # Seconds to trigger processing
-    silence_threshold=1.5     # Seconds for full reset
-)
-```
-
-## Usage Examples
-
-### Transcribe System Audio
-Perfect for:
-- YouTube videos and tutorials
-- Zoom/Teams meetings
-- Streaming content and podcasts
-- Live presentations
-
-```bash
-# Select "Background Music" device when prompted
-python main.py
-> Enter device ID: 1  # Background Music
-```
-
-### Transcribe Microphone
-Perfect for:
-- Voice notes and dictation
-- Meeting notes
-- Live conversations
-- Interview transcription
-
-```bash
-# Select microphone device when prompted
-python main.py
-> Enter device ID: 3  # MacBook Pro Microphone
-```
+For detailed requirements and installation instructions, see the [Setup Guide](docs/setup.md).
 
 ## How It Works
 
@@ -184,14 +91,16 @@ python-audio/
 ├── transcription.py          # NeMo ASR model management  
 ├── sentence_processor.py     # Sentence grouping and filtering
 ├── database.py               # PostgreSQL database operations
-├── docker-compose.yml        # PostgreSQL container setup
-├── init-db/                  # Database initialization
-│   └── 01-create-schema.sql  # Database schema creation
+├── docs/                     # Documentation folder
+│   ├── setup.md              # Complete setup guide
+│   ├── usage.md              # Usage examples and scenarios
+│   ├── api.md                # API and integration docs
+│   ├── DATABASE_SETUP.md     # Database configuration
+│   └── troubleshooting.md    # Common issues and solutions
 ├── .env                      # Database credentials (not in git)
 ├── .env.example              # Example environment configuration
 ├── setup.sh                  # Environment setup script
 ├── requirements.txt          # Python dependencies
-├── DATABASE_SETUP.md         # Database setup documentation
 └── README.md                 # This documentation
 ```
 
@@ -228,30 +137,22 @@ python-audio/
 
 ## Troubleshooting
 
-### Background Music Issues
-```bash
-# If Background Music isn't working:
-sudo killall coreaudiod
-open /Applications/Background\ Music.app
+For detailed troubleshooting information, see the [Troubleshooting Guide](docs/troubleshooting.md).
 
-# Check Background Music is set as output device in System Preferences
-```
+Common issues:
+- **Background Music Issues** - Audio routing problems
+- **Model Loading Issues** - Download and GPU problems  
+- **Audio Device Problems** - Device detection and permissions
+- **Permission Issues** - macOS security settings
 
-### Model Loading Issues
-```bash
-# If download fails, try manually:
-python -c "import nemo.collections.asr as nemo_asr; nemo_asr.models.ASRModel.from_pretrained('nvidia/parakeet-tdt-0.6b-v2')"
-```
+## Usage Examples
 
-### Audio Device Problems
-```bash
-# List all audio devices:
-python -c "import sounddevice as sd; print(sd.query_devices())"
-```
+For detailed usage examples and scenarios, see the [Usage Guide](docs/usage.md).
 
-### Permission Issues (macOS)
-- Go to **System Preferences > Security & Privacy > Privacy**
-- Enable **Microphone** access for Terminal/VS Code
+### Quick Examples
+- **System Audio**: Perfect for YouTube videos, meetings, streaming content
+- **Microphone Input**: Great for voice notes, dictation, interviews
+- **Live Transcription**: Real-time processing with intelligent segmentation
 
 ## Output Examples
 
