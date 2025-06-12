@@ -8,6 +8,7 @@ and database storage of transcribed segments.
 
 import time
 import re
+from typing import Optional
 from typing import List, Optional
 from database import DatabaseManager
 
@@ -15,12 +16,12 @@ from database import DatabaseManager
 class SentenceProcessor:
     """Manages sentence grouping and duplicate filtering."""
     
-    def __init__(self, recording_name="Untitled Recording", min_sentence_length=10):
+    def __init__(self, recording_name: Optional[str] = None, min_sentence_length=10):
         """
         Initialize the sentence processor.
         
         Args:
-            recording_name: Name of the recording session
+            recording_name: Name of the recording session (None for no name)
             min_sentence_length: Minimum characters for a valid sentence
         """
         self.recording_name = recording_name
@@ -168,10 +169,10 @@ class SentenceProcessor:
         except Exception as e:
             print(f"⚠️  Database error: {e}")
     
-    def get_recording_name(self) -> str:
+    def get_recording_name(self) -> Optional[str]:
         """Get the current recording name."""
         return self.recording_name
     
-    def set_recording_name(self, recording_name: str):
+    def set_recording_name(self, recording_name: Optional[str]):
         """Set a new recording name."""
         self.recording_name = recording_name

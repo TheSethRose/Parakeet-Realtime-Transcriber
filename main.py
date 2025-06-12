@@ -34,13 +34,13 @@ print(f"All dependencies loaded in {loading_time:.1f} seconds")
 class RealTimeTranscriber:
     """Main orchestrator for real-time audio transcription."""
     
-    def __init__(self, recording_name="Untitled Recording", sample_rate=16000, 
+    def __init__(self, recording_name: Optional[str] = None, sample_rate=16000, 
                  max_segment_duration=20, min_segment_duration=5, vad_aggressiveness=2):
         """
         Initialize the real-time transcriber.
         
         Args:
-            recording_name: Name of the recording session
+            recording_name: Name of the recording session (None for no name)
             sample_rate: Audio sampling rate (16kHz for Parakeet)
             max_segment_duration: Maximum audio segment length (seconds)
             min_segment_duration: Minimum segment length before forcing transcription
@@ -177,17 +177,21 @@ def get_user_input():
     
     # Ask for recording name
     print("\nRecording Information:")
-    recording_name = input("Enter recording name (e.g., 'WWDC25 on YouTube'): ").strip()
+    recording_name = input("Enter recording name (leave empty for no name): ").strip()
     if not recording_name:
-        recording_name = "Untitled Recording"
+        recording_name = None
     
     return device, recording_name
 
 
-def display_session_info(recording_name: str):
+def display_session_info(recording_name: Optional[str]):
     """Display session information and features."""
-    print(f"\n📝 Recording: {recording_name}")
-    print("=" * (len(recording_name) + 13))
+    if recording_name:
+        print(f"\n📝 Recording: {recording_name}")
+        print("=" * (len(recording_name) + 13))
+    else:
+        print(f"\n📝 Recording: (No name)")
+        print("=" * 19)
     print("\nEverything ready! Starting Parakeet-optimized transcription...")
     print("Features enabled:")
     print("   • Parakeet best practices (5-20 second segments)")

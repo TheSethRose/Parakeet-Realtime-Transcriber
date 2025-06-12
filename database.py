@@ -67,7 +67,7 @@ class DatabaseManager:
     
     def insert_recording_segment(
         self, 
-        recording_name: str, 
+        recording_name: Optional[str], 
         segment_timestamp: float, 
         segment_text: str, 
         category: Optional[str] = None
@@ -76,7 +76,7 @@ class DatabaseManager:
         Insert a transcription segment into the database.
         
         Args:
-            recording_name: Name of the recording session
+            recording_name: Name of the recording session (None for no name)
             segment_timestamp: Timestamp in seconds from recording start
             segment_text: Transcribed text segment
             category: Optional category for the recording
@@ -118,7 +118,7 @@ class DatabaseManager:
     
     def insert_recording_segment_smart(
         self, 
-        recording_name: str, 
+        recording_name: Optional[str], 
         segment_timestamp: float, 
         segment_text: str, 
         category: Optional[str] = None
@@ -130,7 +130,7 @@ class DatabaseManager:
         Otherwise, create a new segment.
         
         Args:
-            recording_name: Name of the recording session
+            recording_name: Name of the recording session (None for no name)
             segment_timestamp: Timestamp in seconds from recording start
             segment_text: Transcribed text segment
             category: Optional category for the recording
@@ -151,14 +151,24 @@ class DatabaseManager:
             
             with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
                 # Check if there's already a segment for this second
-                cursor.execute("""
-                    SELECT id, segment_text 
-                    FROM recordings 
-                    WHERE recording_name = %s 
-                    AND EXTRACT(EPOCH FROM segment_timestamp)::INTEGER = %s
-                    ORDER BY id ASC
-                    LIMIT 1
-                """, (recording_name, timestamp_seconds))
+                if recording_name is None:
+                    cursor.execute("""
+                        SELECT id, segment_text 
+                        FROM recordings 
+                        WHERE recording_name IS NULL 
+                        AND EXTRACT(EPOCH FROM segment_timestamp)::INTEGER = %s
+                        ORDER BY id ASC
+                        LIMIT 1
+                    """, (timestamp_seconds,))
+                else:
+                    cursor.execute("""
+                        SELECT id, segment_text 
+                        FROM recordings 
+                        WHERE recording_name = %s 
+                        AND EXTRACT(EPOCH FROM segment_timestamp)::INTEGER = %s
+                        ORDER BY id ASC
+                        LIMIT 1
+                    """, (recording_name, timestamp_seconds))
                 
                 existing_segment = cursor.fetchone()
                 
@@ -188,12 +198,12 @@ class DatabaseManager:
                 self.connection.rollback()
             return None
     
-    def get_recordings_by_name(self, recording_name: str) -> List[Dict[str, Any]]:
+    def get_recordings_by_name(self, recording_name: Optional[str]) -> List[Dict[str, Any]]:
         """
         Get all segments for a specific recording.
         
         Args:
-            recording_name: Name of the recording
+            recording_name: Name of the recording (None for no name)
             
         Returns:
             List of recording segments as dictionaries
@@ -207,14 +217,24 @@ class DatabaseManager:
         
         try:
             with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("""
-                    SELECT id, date, recording_name, segment_timestamp, segment_text, 
-                           category, created_at, updated_at,
-                           EXTRACT(EPOCH FROM segment_timestamp)::INTEGER as segment_seconds
-                    FROM recordings 
-                    WHERE recording_name = %s 
-                    ORDER BY segment_timestamp
-                """, (recording_name,))
+                if recording_name is None:
+                    cursor.execute("""
+                        SELECT id, date, recording_name, segment_timestamp, segment_text, 
+                               category, created_at, updated_at,
+                               EXTRACT(EPOCH FROM segment_timestamp)::INTEGER as segment_seconds
+                        FROM recordings 
+                        WHERE recording_name IS NULL 
+                        ORDER BY segment_timestamp
+                    """)
+                else:
+                    cursor.execute("""
+                        SELECT id, date, recording_name, segment_timestamp, segment_text, 
+                               category, created_at, updated_at,
+                               EXTRACT(EPOCH FROM segment_timestamp)::INTEGER as segment_seconds
+                        FROM recordings 
+                        WHERE recording_name = %s 
+                        ORDER BY segment_timestamp
+                    """, (recording_name,))
                 
                 return [dict(record) for record in cursor.fetchall()]
                 
@@ -289,12 +309,12 @@ class DatabaseManager:
 
 
 # Convenience functions for easy import
-def save_transcription_segment(recording_name: str, timestamp: float, text: str, category: Optional[str] = None) -> bool:
+def save_transcription_segment(recording_name: Optional[str], timestamp: float, text: str, category: Optional[str] = None) -> bool:
     """
     Convenience function to save a transcription segment.
     
     Args:
-        recording_name: Name of the recording
+        recording_name: Name of the recording (None for no name)
         timestamp: Timestamp in seconds
         text: Transcribed text
         category: Optional category
@@ -308,12 +328,12 @@ def save_transcription_segment(recording_name: str, timestamp: float, text: str,
     return record_id is not None
 
 
-def get_recording_history(recording_name: str) -> List[Dict]:
+def get_recording_history(recording_name: Optional[str]) -> List[Dict]:
     """
     Get all segments for a recording.
     
     Args:
-        recording_name: Name of the recording
+        recording_name: Name of the recording (None for no name)
         
     Returns:
         List of recording segments
