@@ -16,6 +16,13 @@ A professional real-time audio transcription system using NVIDIA's Parakeet TDT 
 - **Microphone Input**: Direct voice transcription
 - **Background Music Support**: Transcribe audio from streaming services, videos, meetings
 
+### Database Storage
+- **PostgreSQL Integration**: All transcriptions automatically saved to database
+- **Timestamped Segments**: Each sentence stored with precise timing
+- **Recording Sessions**: Group transcriptions by recording name/session
+- **Query & Retrieval**: Full history of all transcriptions with search capabilities
+- **Docker Setup**: Containerized PostgreSQL with secure, randomized credentials
+
 ### Advanced AI
 - **NVIDIA Parakeet TDT 0.6B V2**: State-of-the-art ASR model optimized for English
 - **600M Parameters**: High-quality transcription with proper punctuation
@@ -55,14 +62,26 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-### 3. Activate Environment
+### 3. Database Setup
+```bash
+# Start PostgreSQL database container
+docker-compose up -d
+
+# Verify database is running
+docker-compose ps
+
+# Optional: Test database connection
+python database.py
+```
+
+### 4. Activate Environment
 ```bash
 source .venv/bin/activate
 ```
 
-### 4. Run Transcriber
+### 5. Run Transcriber
 ```bash
-python audio_transcriber.py
+python main.py
 ```
 
 ## Requirements
@@ -115,7 +134,7 @@ Perfect for:
 
 ```bash
 # Select "Background Music" device when prompted
-python audio_transcriber.py
+python main.py
 > Enter device ID: 1  # Background Music
 ```
 
@@ -128,7 +147,7 @@ Perfect for:
 
 ```bash
 # Select microphone device when prompted
-python audio_transcriber.py
+python main.py
 > Enter device ID: 3  # MacBook Pro Microphone
 ```
 
@@ -153,6 +172,34 @@ Audio Segment (5-20s) → Parakeet Model → Raw Transcription → Post-processi
 ```
 Raw Text → Sentence Grouping → Duplicate Filtering → Clean Output
 ```
+
+## 📁 Project Structure
+
+```
+python-audio/
+├── main.py                    # Main orchestration script
+├── audio_capture.py          # Audio device handling and VAD
+├── transcription.py          # NeMo ASR model management  
+├── sentence_processor.py     # Sentence grouping and filtering
+├── database.py               # PostgreSQL database operations
+├── docker-compose.yml        # PostgreSQL container setup
+├── init-db/                  # Database initialization
+│   └── 01-create-schema.sql  # Database schema creation
+├── .env                      # Database credentials (not in git)
+├── .env.example              # Example environment configuration
+├── setup.sh                  # Environment setup script
+├── requirements.txt          # Python dependencies
+├── DATABASE_SETUP.md         # Database setup documentation
+└── README.md                 # This documentation
+```
+
+### Module Overview
+
+- **`main.py`** - Entry point and real-time transcription coordinator
+- **`audio_capture.py`** - Audio device discovery, VAD processing, and stream management
+- **`database.py`** - PostgreSQL connection, transcription storage, and retrieval
+- **`transcription.py`** - Parakeet model loading and audio-to-text conversion
+- **`sentence_processor.py`** - Smart sentence grouping, duplicate filtering, and output formatting
 
 ## Performance
 
