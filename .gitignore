@@ -1,0 +1,91 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Audio Files
+*.wav
+*.mp3
+*.flac
+*.aac
+*.ogg
+*.m4a
+recordings/
+audio_cache/
+
+# Models and Checkpoints
+models/
+checkpoints/
+*.ckpt
+*.pth
+*.safetensors
+
+# Logs
+*.log
+logs/
+nemo_experiments/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Configuration files with secrets
+config.json
+secrets.env
+.env.local
+
+# NeMo specific
+.nemo/
+nemo_cache/
+hydra_logs/
+
+# CUDA
+*.cu.o
+*.ptx

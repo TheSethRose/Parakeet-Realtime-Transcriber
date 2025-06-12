@@ -1,0 +1,7 @@
+nemo_toolkit[asr]
+sounddevice
+numpy
+scipy
+torch
+torchaudio
+webrtcvad
