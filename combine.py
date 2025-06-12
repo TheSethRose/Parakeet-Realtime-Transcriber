@@ -85,8 +85,8 @@ def display_available_recordings(db: DatabaseManager) -> List[Tuple[Any, ...]]:
             for i, record in enumerate(recordings, 1):
                 name = record[0] if record[0] else "(No name)"
                 count = record[1]
-                first_time = record[2].strftime("%H:%M:%S") if record[2] else "Unknown"
-                last_time = record[3].strftime("%H:%M:%S") if record[3] else "Unknown"
+                first_time = format_time_display(record[2])
+                last_time = format_time_display(record[3])
                 date = record[4].strftime("%Y-%m-%d") if record[4] else "Unknown"
                 
                 print(f"   {i:2d}. {name}")
