@@ -124,10 +124,10 @@ class DatabaseManager:
         category: Optional[str] = None
     ) -> Optional[int]:
         """
-        Insert a transcription segment with intelligent minute-based combination.
+        Insert a transcription segment with intelligent second-based combination.
         
-        Combines segments that occur within the same minute for more readable transcriptions.
-        Orders combination by subsecond precision to maintain chronological accuracy.
+        If a segment already exists for the same second, append the new text to it.
+        Otherwise, create a new segment.
         
         Args:
             recording_name: Name of the recording session
@@ -146,57 +146,44 @@ class DatabaseManager:
             return None
         
         try:
-            # Calculate the minute boundary (e.g., 23.534829 -> 23 minutes)
-            minute_timestamp = int(segment_timestamp // 60) * 60
-            minute_interval = timedelta(seconds=minute_timestamp)
+            # Extract the second portion of the timestamp (ignore subseconds)
+            timestamp_seconds = int(segment_timestamp)
             
             with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                # Check if there's already a segment for this minute
+                # Check if there's already a segment for this second
                 cursor.execute("""
-                    SELECT id, segment_text, segment_timestamp 
+                    SELECT id, segment_text 
                     FROM recordings 
                     WHERE recording_name = %s 
-                    AND EXTRACT(EPOCH FROM segment_timestamp)::INTEGER / 60 = %s / 60
-                    ORDER BY segment_timestamp DESC
+                    AND EXTRACT(EPOCH FROM segment_timestamp)::INTEGER = %s
+                    ORDER BY id ASC
                     LIMIT 1
-                """, (recording_name, segment_timestamp))
+                """, (recording_name, timestamp_seconds))
                 
-                existing_record = cursor.fetchone()
+                existing_segment = cursor.fetchone()
                 
-                if existing_record:
-                    # Combine with existing segment
-                    existing_text = existing_record['segment_text']
-                    combined_text = f"{existing_text} {segment_text}"
+                if existing_segment:
+                    # Append to existing segment
+                    existing_text = existing_segment['segment_text']
+                    combined_text = f"{existing_text} {segment_text}".strip()
                     
-                    # Update the existing record with combined text
                     cursor.execute("""
                         UPDATE recordings 
                         SET segment_text = %s, updated_at = CURRENT_TIMESTAMP
                         WHERE id = %s
                         RETURNING id
-                    """, (combined_text, existing_record['id']))
+                    """, (combined_text, existing_segment['id']))
                     
                     result = cursor.fetchone()
-                    if result:
-                        self.connection.commit()
-                        return result['id']
+                    self.connection.commit()
+                    return result['id'] if result else None
+                    
                 else:
-                    # Create new record for this minute
-                    cursor.execute("""
-                        INSERT INTO recordings (recording_name, segment_timestamp, segment_text, category)
-                        VALUES (%s, %s, %s, %s)
-                        RETURNING id
-                    """, (recording_name, minute_interval, segment_text, category))
+                    # Create new segment
+                    return self.insert_recording_segment(recording_name, segment_timestamp, segment_text, category)
                     
-                    result = cursor.fetchone()
-                    if result:
-                        self.connection.commit()
-                        return result['id']
-                
-                return None
-                
         except psycopg2.Error as e:
-            self.logger.error(f"Failed to insert smart recording segment: {e}")
+            self.logger.error(f"Failed to insert/update recording segment: {e}")
             if self.connection:
                 self.connection.rollback()
             return None

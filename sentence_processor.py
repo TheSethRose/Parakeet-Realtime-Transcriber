@@ -9,7 +9,7 @@ and database storage of transcribed segments.
 import time
 import re
 from typing import List, Optional
-from database import save_transcription_segment
+from database import DatabaseManager
 
 
 class SentenceProcessor:
@@ -25,6 +25,9 @@ class SentenceProcessor:
         """
         self.recording_name = recording_name
         self.min_sentence_length = min_sentence_length
+        
+        # Database manager for smart insertion
+        self.db_manager = DatabaseManager()
         
         # Sentence processing state
         self.sentence_buffer = []
@@ -151,15 +154,15 @@ class SentenceProcessor:
             current_time = time.time()
             segment_timestamp = current_time - self.session_start_time
             
-            # Save to database
-            success = save_transcription_segment(
+            # Save to database with smart combination
+            record_id = self.db_manager.insert_recording_segment_smart(
                 recording_name=self.recording_name,
-                timestamp=segment_timestamp,
-                text=sentence,
+                segment_timestamp=segment_timestamp,
+                segment_text=sentence,
                 category="transcription"  # You could make this configurable
             )
             
-            if not success:
+            if not record_id:
                 print(f"⚠️  Warning: Failed to save segment to database")
             
         except Exception as e:
