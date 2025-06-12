@@ -57,6 +57,10 @@ generate_credentials.py
 recordings/
 audio_cache/
 
+# Export Files
+export/
+exports/
+
 # Models and Checkpoints
 models/
 checkpoints/
