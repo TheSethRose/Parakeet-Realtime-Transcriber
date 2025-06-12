@@ -2,7 +2,7 @@
 """
 Database Module
 
-Handles PostgreSQL database connections and recording storage
+Handles Neon PostgreSQL database connections and recording storage
 for the audio transcription system.
 """
 
@@ -19,17 +19,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class DatabaseManager:
-    """Manages PostgreSQL database operations for transcription recordings."""
+    """Manages Neon PostgreSQL database operations for transcription recordings."""
     
     def __init__(self):
-        """Initialize database connection using environment variables."""
-        self.connection_params = {
-            'host': os.getenv('POSTGRES_HOST', 'localhost'),
-            'port': os.getenv('POSTGRES_PORT', '5433'),
-            'database': os.getenv('POSTGRES_DB', 'transcription_db'),
-            'user': os.getenv('POSTGRES_USER'),
-            'password': os.getenv('POSTGRES_PASSWORD')
-        }
+        """Initialize database connection using Neon DATABASE_URL."""
+        self.database_url = os.getenv('DATABASE_URL')
+        if not self.database_url:
+            raise ValueError("DATABASE_URL environment variable is required for Neon connection")
         
         self.connection: Optional[PostgresConnection] = None
         self._setup_logging()
@@ -49,13 +45,13 @@ class DatabaseManager:
     
     def connect(self) -> bool:
         """
-        Establish database connection.
+        Establish database connection using Neon DATABASE_URL.
         
         Returns:
             bool: True if connection successful, False otherwise
         """
         try:
-            self.connection = psycopg2.connect(**self.connection_params)
+            self.connection = psycopg2.connect(self.database_url)
             # Silent connection - only log errors
             return True
         except psycopg2.Error as e:
@@ -120,6 +116,91 @@ class DatabaseManager:
                 self.connection.rollback()
             return None
     
+    def insert_recording_segment_smart(
+        self, 
+        recording_name: str, 
+        segment_timestamp: float, 
+        segment_text: str, 
+        category: Optional[str] = None
+    ) -> Optional[int]:
+        """
+        Insert a transcription segment with intelligent minute-based combination.
+        
+        Combines segments that occur within the same minute for more readable transcriptions.
+        Orders combination by subsecond precision to maintain chronological accuracy.
+        
+        Args:
+            recording_name: Name of the recording session
+            segment_timestamp: Timestamp in seconds from recording start
+            segment_text: Transcribed text segment
+            category: Optional category for the recording
+            
+        Returns:
+            int: ID of inserted/updated record, None if failed
+        """
+        if not self.connection:
+            if not self.connect():
+                return None
+        
+        if self.connection is None:
+            return None
+        
+        try:
+            # Calculate the minute boundary (e.g., 23.534829 -> 23 minutes)
+            minute_timestamp = int(segment_timestamp // 60) * 60
+            minute_interval = timedelta(seconds=minute_timestamp)
+            
+            with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Check if there's already a segment for this minute
+                cursor.execute("""
+                    SELECT id, segment_text, segment_timestamp 
+                    FROM recordings 
+                    WHERE recording_name = %s 
+                    AND EXTRACT(EPOCH FROM segment_timestamp)::INTEGER / 60 = %s / 60
+                    ORDER BY segment_timestamp DESC
+                    LIMIT 1
+                """, (recording_name, segment_timestamp))
+                
+                existing_record = cursor.fetchone()
+                
+                if existing_record:
+                    # Combine with existing segment
+                    existing_text = existing_record['segment_text']
+                    combined_text = f"{existing_text} {segment_text}"
+                    
+                    # Update the existing record with combined text
+                    cursor.execute("""
+                        UPDATE recordings 
+                        SET segment_text = %s, updated_at = CURRENT_TIMESTAMP
+                        WHERE id = %s
+                        RETURNING id
+                    """, (combined_text, existing_record['id']))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        self.connection.commit()
+                        return result['id']
+                else:
+                    # Create new record for this minute
+                    cursor.execute("""
+                        INSERT INTO recordings (recording_name, segment_timestamp, segment_text, category)
+                        VALUES (%s, %s, %s, %s)
+                        RETURNING id
+                    """, (recording_name, minute_interval, segment_text, category))
+                    
+                    result = cursor.fetchone()
+                    if result:
+                        self.connection.commit()
+                        return result['id']
+                
+                return None
+                
+        except psycopg2.Error as e:
+            self.logger.error(f"Failed to insert smart recording segment: {e}")
+            if self.connection:
+                self.connection.rollback()
+            return None
+    
     def get_recordings_by_name(self, recording_name: str) -> List[Dict[str, Any]]:
         """
         Get all segments for a specific recording.
@@ -140,7 +221,10 @@ class DatabaseManager:
         try:
             with self.connection.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("""
-                    SELECT * FROM recordings_formatted 
+                    SELECT id, date, recording_name, segment_timestamp, segment_text, 
+                           category, created_at, updated_at,
+                           EXTRACT(EPOCH FROM segment_timestamp)::INTEGER as segment_seconds
+                    FROM recordings 
                     WHERE recording_name = %s 
                     ORDER BY segment_timestamp
                 """, (recording_name,))

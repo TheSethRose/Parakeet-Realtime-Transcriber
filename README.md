@@ -17,11 +17,11 @@ A professional real-time audio transcription system using NVIDIA's Parakeet TDT 
 - **Background Music Support**: Transcribe audio from streaming services, videos, meetings
 
 ### Database Storage
-- **PostgreSQL Integration**: All transcriptions automatically saved to database
+- **Neon PostgreSQL**: Cloud-hosted PostgreSQL database for scalable storage
 - **Timestamped Segments**: Each sentence stored with precise timing
 - **Recording Sessions**: Group transcriptions by recording name/session
 - **Query & Retrieval**: Full history of all transcriptions with search capabilities
-- **Docker Setup**: Containerized PostgreSQL with secure, randomized credentials
+- **Automatic Schema Setup**: Database schema applied automatically during setup
 
 ### Advanced AI
 - **NVIDIA Parakeet TDT 0.6B V2**: State-of-the-art ASR model optimized for English
@@ -63,15 +63,17 @@ chmod +x setup.sh
 ```
 
 ### 3. Database Setup
+
+The project uses Neon PostgreSQL for cloud database storage. Make sure your `.env` file contains the correct Neon connection string:
+
 ```bash
-# Start PostgreSQL database container
-docker-compose up -d
+# Example .env configuration
+DATABASE_URL=postgresql://username:password@hostname/database_name?sslmode=require
+```
 
-# Verify database is running
-docker-compose ps
-
-# Optional: Test database connection
-python database.py
+Test your database connection:
+```bash
+python test_neon_connection.py
 ```
 
 ### 4. Activate Environment
