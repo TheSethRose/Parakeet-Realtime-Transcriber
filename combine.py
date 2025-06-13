@@ -72,7 +72,7 @@ def display_available_recordings(db: DatabaseManager) -> List[Tuple[Any, ...]]:
                        MAX(segment_timestamp) as last_segment,
                        DATE(MIN(created_at)) as date
                 FROM recordings 
-                GROUP BY recording_name, DATE(created_at)
+                GROUP BY recording_name
                 ORDER BY DATE(MIN(created_at)) DESC, MIN(segment_timestamp) DESC
             """)
             

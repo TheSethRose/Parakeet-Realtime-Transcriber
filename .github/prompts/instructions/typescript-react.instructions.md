@@ -5,7 +5,7 @@ description: "TypeScript and React coding standards with performance optimizatio
 
 # Project coding standards for TypeScript and React
 
-Apply the [general coding guidelines](./general.instructions.md) to all code.
+Apply the [general coding guidelines](../general.instructions.md) to all code.
 
 ## TypeScript Guidelines
 

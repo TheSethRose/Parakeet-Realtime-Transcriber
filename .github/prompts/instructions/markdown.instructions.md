@@ -5,7 +5,7 @@ description: "Comprehensive Markdown writing standards for documentation, README
 
 # Markdown Writing Standards
 
-Apply the [general coding guidelines](./general.instructions.md) to all Markdown content.
+Apply the [general coding guidelines](../general.instructions.md) to all Markdown content.
 
 ## Document Structure
 

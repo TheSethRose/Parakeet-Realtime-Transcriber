@@ -5,7 +5,7 @@ description: "Python coding standards with type hints, performance optimization,
 
 # Python Coding Standards
 
-Apply the [general coding guidelines](./general.instructions.md) to all Python code.
+Apply the [general coding guidelines](../general.instructions.md) to all Python code.
 
 ## Python Style Guide
 
