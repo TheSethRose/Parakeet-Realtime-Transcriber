@@ -18,6 +18,45 @@ Execute comprehensive Git operations with strict process adherence, safety check
 /git [subcommand] [options]
 ```
 
+## Message File Management
+
+**CRITICAL**: All commit messages, PR descriptions, and other long-form text content must be written to temporary files to prevent terminal line breaks and formatting issues.
+
+**Process:**
+
+1. **Temp Directory Setup**
+
+   - Ensure `temp/` directory exists
+   - Verify `temp/` is added to `.gitignore`
+   - Create necessary temporary files
+
+2. **File-based Message Handling**
+
+   - Write commit messages to `temp/commit.txt`
+   - Write PR descriptions to `temp/pr_body.txt`
+   - Write issue descriptions to `temp/issue.txt`
+   - Use `git commit -F temp/commit.txt` instead of `-m` flag
+   - Use `gh pr create --title "Title" --body-file temp/pr_body.txt`
+
+3. **Cleanup**
+   - Delete temporary files after successful operations
+   - Ensure temp directory is clean between operations
+   - Handle cleanup even if operations fail
+
+**File Usage Examples:**
+
+```bash
+# Instead of: git commit -m "Long message that might break..."
+echo "commit message content" > temp/commit.txt
+git commit -F temp/commit.txt
+rm temp/commit.txt
+
+# Instead of: gh pr create --body "Long body..."
+echo "PR body content" > temp/pr_body.txt
+gh pr create --title "Title" --body-file temp/pr_body.txt
+rm temp/pr_body.txt
+```
+
 ## Subcommands
 
 ### `/git commit` - Strict Commit Process
@@ -28,6 +67,7 @@ Execute the complete commit workflow with automated checks and conventional comm
 
 1. **Pre-commit Validation**
 
+   - Check git status to identify all changed files
    - Run linting and formatting checks
    - Execute relevant tests
    - Validate build process
@@ -35,15 +75,17 @@ Execute the complete commit workflow with automated checks and conventional comm
 
 2. **Staging Review**
 
-   - Display all changes for review
+   - Display all changes for review using git status
    - Confirm intent for each modified file
    - Validate file additions/deletions
    - Check for unintended changes
 
 3. **Commit Message Generation**
 
-   - Follow Conventional Commits specification
-   - Generate descriptive, atomic commit messages
+   - Create commits for individual files or group related changes
+   - Generate descriptive commit messages that briefly describe changes
+   - Write commit message to `temp/commit.txt`
+   - Follow Conventional Commits specification when appropriate
    - Include breaking change indicators
    - Reference related issues/tickets
 
@@ -51,6 +93,8 @@ Execute the complete commit workflow with automated checks and conventional comm
    - Confirm commit message accuracy
    - Verify staged changes match intent
    - Execute final safety checks
+   - Use `git commit -F temp/commit.txt` for committing
+   - Clean up temporary files after successful commit
 
 **Conventional Commit Format:**
 
@@ -63,6 +107,45 @@ Execute the complete commit workflow with automated checks and conventional comm
 ```
 
 **Types:** feat, fix, docs, style, refactor, perf, test, build, ci, chore
+
+### `/git pr` - Pull Request Creation
+
+Create pull requests using GitHub CLI following a structured process.
+
+**Process:**
+
+1. **Status Check**
+
+   - Run `git status` to check for uncommitted changes
+
+2. **Staging (if needed)**
+
+   - Run `git add .` to add all changes to staging area
+
+3. **Commit (if needed)**
+
+   - Write commit message to `temp/commit.txt`
+   - Run `git commit -F temp/commit.txt` with descriptive message
+   - Delete commit file in temp/commit.txt
+
+4. **Push (if needed)**
+
+   - Run `git push` to push changes to remote repository
+
+5. **Branch Verification**
+
+   - Run `git branch` to check current branch
+
+6. **Change Analysis**
+
+   - Run `git log main..[current branch]` to see commits on current branch
+   - Run `git diff --name-status main` to check what files have been changed
+
+7. **PR Creation**
+   - Write PR body content to `temp/pr_body.txt`
+   - Use `gh pr create --title "Title goes here..." --body-file temp/pr_body.txt`
+   - Include comprehensive description of changes in the file
+   - Clean up temporary files after PR creation
 
 ### `/git branch` - Feature Branch Management
 
@@ -114,14 +197,17 @@ Generate comprehensive GitHub issues from current development context.
 
    - Select appropriate issue template
    - Generate descriptive title and description
+   - Write issue content to `temp/issue.txt`
    - Add relevant labels and milestones
    - Include reproduction steps if applicable
 
 3. **Documentation Generation**
-   - Create detailed problem description
+   - Create detailed problem description in temporary file
    - Include system environment details
    - Add code examples and error logs
    - Suggest potential solutions or workarounds
+   - Use `gh issue create --title "Title" --body-file temp/issue.txt`
+   - Clean up temporary files after issue creation
 
 **Issue Template Structure:**
 
@@ -278,6 +364,7 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - [ ] No uncommitted changes
 - [ ] Tests are passing
 - [ ] Build is successful
+- [ ] `temp/` directory exists and is in `.gitignore`
 
 ### Code Quality Checks
 
@@ -294,6 +381,7 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - [ ] Pull request requirements met
 - [ ] Code review approvals obtained
 - [ ] CI/CD pipeline success
+- [ ] Temporary files cleaned up after operations
 
 ## Integration with Project Workflow
 
@@ -333,6 +421,7 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - Suggested remediation steps
 - Safe rollback procedures
 - Prevention strategies for future occurrences
+- Clean up temporary files even after failures
 
 ### Recovery Procedures
 
@@ -340,6 +429,7 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - Branch restoration capabilities
 - Commit history recovery
 - Lost work recovery strategies
+- Temporary file cleanup and recovery
 
 ## Best Practices
 
@@ -349,6 +439,7 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - Descriptive commit messages
 - Logical change grouping
 - Avoid commits with multiple unrelated changes
+- Always use file-based commit messages for complex commits
 
 ### Branch Management
 
@@ -364,6 +455,13 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - Clear communication of breaking changes
 - Proper versioning and documentation
 
+### File Management
+
+- Always ensure `temp/` is in `.gitignore`
+- Clean up temporary files after each operation
+- Handle file cleanup in error scenarios
+- Use appropriate temporary file names for different operations
+
 ## Security Considerations
 
 ### Sensitive Data Protection
@@ -372,6 +470,7 @@ Prepare releases with automated changelog generation, versioning, and deployment
 - Validate .gitignore effectiveness
 - Check for exposed API keys or passwords
 - Ensure proper environment variable usage
+- Verify `temp/` directory is properly ignored
 
 ### Access Control
 

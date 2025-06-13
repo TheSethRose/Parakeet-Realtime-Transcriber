@@ -10,13 +10,30 @@ Apply the [general coding guidelines](./general.instructions.md) to all planning
 
 ## Purpose
 
-Analyze requirements thoroughly and create detailed implementation plans with clear deliverables, timelines, and success criteria.
+Analyze requirements thoroughly and create detailed implementation plans with clear deliverables, timelines, and success criteria. When entering "Planner Mode" or "Architecture Mode", deeply reflect upon the changes being asked and analyze existing code to map the full scope of changes needed. Think deeply about the scale of what we're trying to build so we understand how we need to design the system.
 
 ## Usage
 
 ```
 /plan [feature/project description]
 ```
+
+## Planner Mode Workflow
+
+When entering Planner Mode or Architecture Mode, the following process will be followed:
+
+1. **Deep Analysis**: Thoroughly analyze the requested changes and examine existing codebase to understand full scope and scale of the system
+2. **Architecture Tradeoff Analysis**: Generate a 5 paragraph tradeoff analysis of different ways to design the system considering constraints, scale, performance considerations and requirements
+3. **Clarifying Questions**: Ask 4-6 targeted questions based on findings to assess the scale of the system we're trying to build
+4. **System Design Architecture**: Draft a comprehensive system design architecture and request approval
+5. **Iterative Refinement**: If feedback or questions are provided, engage in conversation to analyze tradeoffs further and revise the architecture - once revised, ask for approval again
+6. **Implementation Planning**: Once architecture is approved, work on a plan to implement the architecture based on the provided requirements
+7. **Plan Approval**: If feedback is provided on the implementation plan, revise and ask for approval again
+8. **Phased Implementation**: Once approved, implement all steps in that plan
+9. **Progress Tracking**: After each phase/step completion, provide status updates including:
+   - What was just completed
+   - What the next steps are
+   - Remaining phases after current steps
 
 ## Planning Framework
 
@@ -67,6 +84,10 @@ Analyze requirements thoroughly and create detailed implementation plans with cl
 - **Objective**: [Clear goal statement]
 - **Scope**: [What's included/excluded]
 - **Success Criteria**: [Measurable outcomes]
+
+## Architecture Tradeoff Analysis
+
+[5 paragraph analysis of different system design approaches considering constraints, scale, performance, and requirements]
 
 ## Requirements
 
@@ -154,6 +175,11 @@ Analyze requirements thoroughly and create detailed implementation plans with cl
 - Validate plans with stakeholders before implementation
 - Include rollback and recovery strategies
 - Plan for both happy path and edge cases
+- Deeply analyze existing code before proposing changes
+- Ask clarifying questions to ensure complete understanding
+- Generate comprehensive tradeoff analysis for different architectural approaches
+- Engage in iterative conversation to refine architecture before implementation
+- Provide clear progress updates throughout implementation
 
 ## Integration
 

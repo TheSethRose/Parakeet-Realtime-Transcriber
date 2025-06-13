@@ -4,13 +4,18 @@ description: "Automated generation of boilerplate code, components, API routes, 
 
 # Code Scaffolding & Generation
 
-Apply the [general coding guidelines](./general.instructions.md) and [TypeScript React guidelines](./typescript-react.instructions.md) to all generated code.
+Apply the [general coding guidelines](./general.instructions.md) and [TypeScript React guidelines](./instructions/typescript-react.instructions.md) to all generated code.
 
 **Command:** `/scaffold`
 
 ## Purpose
 
 Automated generation of boilerplate code, components, API routes, pages, and other project structures following established patterns and best practices.
+
+## Reference Files
+
+If provided markdown files, make sure to read them as reference for how to structure your code.Only use them for reference and examples of how to structure your code.
+If not provided markdown files, check the /docs folder.
 
 ## Usage
 
